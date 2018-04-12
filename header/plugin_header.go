@@ -47,8 +47,10 @@ func PluginLoad(pdir string) {
 		return
 	}
 	for _, file := range files {
+
 		fileInfo := strings.Split(file.Name(), ".")
 		if !file.IsDir() && len(fileInfo) == 2 && fileInfo[1] == "so" {
+			log.Info("Plugin file:", file.Name())
 			p, err := plugin.Open(fmt.Sprintf("%s/%s", pdir, file.Name()))
 			if err != nil {
 				log.Error(err)
@@ -65,14 +67,16 @@ func PluginLoad(pdir string) {
 		}
 	}
 
+	log.Info(pluginsMap)
+
 }
 
 func PluginOnProxy(proxy *goproxy.ProxyHttpServer) {
 	proxy.OnRequest().DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-		for n, plug := range pluginsMap {
-			if pp, ok := plug.(ProxyPluginRequest); ok &&
-				plug.InHost(req.Host) &&
-				plug.Filter(req.RequestURI) {
+		for n, _ := range pluginsMap {
+			if pp, ok := pluginsMap[n].(ProxyPluginRequest); ok &&
+				pp.InHost(req.Host) &&
+				pp.Filter(req.URL.Path) {
 				log.Info("RUN START Request: ", n)
 				res, resp := pp.Request(req)
 				return res, resp
@@ -84,7 +88,7 @@ func PluginOnProxy(proxy *goproxy.ProxyHttpServer) {
 	proxy.OnResponse().DoFunc(func(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 		for n, plug := range pluginsMap {
 			if pp, ok := plug.(ProxyPluginResponse); ok &&
-				resp.Request != nil &&
+				resp != nil &&
 				plug.InHost(resp.Request.Host) &&
 				plug.Filter(resp.Request.RequestURI) {
 				log.Info("RUN START Response", n)
