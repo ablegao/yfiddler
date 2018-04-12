@@ -1,0 +1,22 @@
+requests:
+  -
+    hosts:
+      - nbt.com
+    filters:
+      - root.pem
+    filter_type: 0
+    response:
+      datatype: 2
+      data: "./rootCA.pem"
+      headers:
+        Content-Disposition: "attachment; filename='rootCA.pem'"
+        Content-type: "PEM certificate"
+  -
+    filters:
+      -
+        solortb.js
+    response:
+      datatype: 2
+      data: ./solortb.js
+    
+responses:
