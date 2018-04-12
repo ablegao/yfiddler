@@ -41,7 +41,7 @@ func YamlHeader(proxy *goproxy.ProxyHttpServer, yamlFile string) {
 
 	proxy.OnResponse().DoFunc(func(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 		for _, res := range config.Responses {
-			if res.InHosts(resp.Request.Host) && res.Filter(resp.Request.RequestURI) {
+			if resp.Request != nil && res.InHosts(resp.Request.Host) && res.Filter(resp.Request.RequestURI) {
 				if res.DataType == configure.DATA_TYPE_NONE {
 					for hk, hv := range res.Headers {
 						resp.Header.Set(hk, hv)

@@ -37,7 +37,7 @@ type ProxyPluginResponse interface {
 	Reset()
 	InHost(string) bool
 	Filter(string) bool
-	Response(resp *http.Response) error
+	Response(resp *http.Response) *http.Response
 }
 
 func PluginLoad(pdir string) {
@@ -70,13 +70,29 @@ func PluginLoad(pdir string) {
 func PluginOnProxy(proxy *goproxy.ProxyHttpServer) {
 	proxy.OnRequest().DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 		for n, plug := range pluginsMap {
-			if pp, ok := plug.(ProxyPluginRequest); ok && plug.InHost(req.Host) && plug.Filter(req.RequestURI) {
-				log.Info("RUN START ", n)
+			if pp, ok := plug.(ProxyPluginRequest); ok &&
+				plug.InHost(req.Host) &&
+				plug.Filter(req.RequestURI) {
+				log.Info("RUN START Request: ", n)
 				res, resp := pp.Request(req)
 				return res, resp
 			}
 		}
 		return req, nil
+	})
+
+	proxy.OnResponse().DoFunc(func(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
+		for n, plug := range pluginsMap {
+			if pp, ok := plug.(ProxyPluginResponse); ok &&
+				resp.Request != nil &&
+				plug.InHost(resp.Request.Host) &&
+				plug.Filter(resp.Request.RequestURI) {
+				log.Info("RUN START Response", n)
+				resp = pp.Response(resp)
+				return resp
+			}
+		}
+		return resp
 	})
 
 }
