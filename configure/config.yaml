@@ -6,17 +6,24 @@ requests:
       - root.pem
     filter_type: 0
     response:
-      datatype: 2
+      datatype: 1
       data: "./rootCA.pem"
       headers:
-        Content-Disposition: "attachment; filename='rootCA.pem'"
-        Content-type: "PEM certificate"
+        Content-Disposition:
+          - attachment
+            filename='rootCA.pem'
+        Content-type:
+          - "PEM certificate"
+
   -
+    hosts:
+      - r1.snnd.co
+    filter_type: 0
     filters:
-      -
-        solortb.js
+      - main.html
     response:
-      datatype: 2
-      data: ./solortb.js
-    
-responses:
+      datatype: 1
+      data: /home/ps/MacbookLocal/jstag/main.html
+      headers:
+        Content-type:
+          - text/html

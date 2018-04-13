@@ -5,14 +5,14 @@ import (
 )
 
 type Request struct {
-	HostType   int               `yaml:"host_type"`
-	Hosts      []string          `yaml:"hosts"`
-	FilterURI  []string          `yaml:"filters"`
-	FilterType int               `yaml:"filter_type"`
-	Headers    map[string]string `yaml:"headers"`
-	DataType   int               `yaml:"datatype"`
-	Data       string            `yaml:"data"`
-	Response   *Response         `yaml:"response"`
+	HostType   int                 `yaml:"host_type"`
+	Hosts      []string            `yaml:"hosts,omitempty"`
+	FilterURI  []string            `yaml:"filters,omitempty"`
+	FilterType int                 `yaml:"filter_type"`
+	Headers    map[string][]string `yaml:"headers,omitempty"`
+	DataType   int                 `yaml:"datatype"`
+	Data       string              `yaml:"data,omitempty"`
+	Response   *Response           `yaml:"response,omitempty"`
 }
 
 func (self *Request) InHosts(host string) bool {

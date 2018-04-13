@@ -2,6 +2,8 @@ package configure
 
 import (
 	"bytes"
+	"errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -27,43 +29,34 @@ func NewByteResponse(r *http.Request, contentType string, status int, body []byt
 }
 
 type Response struct {
-	HostType   int               `yaml:"host_type"`
-	Hosts      []string          `yaml:"hosts"`
-	FilterURI  []string          `yaml:"filters"`
-	FilterType int               `yaml:"filter_type"`
-	Headers    map[string]string `yaml:"headers"`
-	DataType   int               `yaml:"datatype"`
-	Data       string            `yaml:"data"`
+	HostType   int                 `yaml:"host_type"`
+	Hosts      []string            `yaml:"hosts,omitempty"`
+	FilterURI  []string            `yaml:"filters,omitempty"`
+	FilterType int                 `yaml:"filter_type"`
+	Headers    map[string][]string `yaml:"headers,omitempty"`
+	DataType   int                 `yaml:"datatype,omitempty"`
+	Data       string              `yaml:"data,omitempty"`
 }
 
-func (self *Response) GetResponse(r *http.Request, res *http.Response) bool {
-	res.Request = r
-	res.TransferEncoding = r.TransferEncoding
-	res.Header = make(http.Header)
-	for k, v := range self.Headers {
-		res.Header.Set(k, v)
-	}
+func (self *Response) GenReadCloser() (int64, io.ReadCloser, error) {
 	switch self.DataType {
 	case DATA_TYPE_TEXT:
 		buf := bytes.NewBufferString(self.Data)
-		res.ContentLength = int64(buf.Len())
-		res.Body = ioutil.NopCloser(buf)
+		return int64(buf.Len()), ioutil.NopCloser(buf), nil
 	case DATA_TYPE_FILE:
 		f, err := os.Open(self.Data)
 		if err != nil {
-			panic(err)
-			return false
+			return 0, nil, err
 		}
-		if fi, err := f.Stat(); err == nil {
-			res.ContentLength = fi.Size()
-			res.Body = f
-		} else {
-			panic(err)
-			return false
+		fi, err := f.Stat()
+		if err != nil {
+			return 0, nil, err
 		}
+		return fi.Size(), io.ReadCloser(f), nil
+
 	}
 
-	return true
+	return 0, nil, errors.New("Gen ERROR NULL")
 }
 
 func (self *Response) InHosts(host string) bool {

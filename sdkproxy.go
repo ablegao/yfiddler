@@ -17,12 +17,14 @@ import (
 	"yfiddler/header"
 
 	"github.com/elazarl/goproxy"
+	"github.com/onrik/logrus/filename"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
 	proxy     *goproxy.ProxyHttpServer
 	verbose   = flag.Bool("v", false, "should every proxy request be logged to stdout")
+	debug     = flag.Bool("debug", false, "should debug mesage to logged to stdout")
 	addr      = flag.String("addr", ":8080", "proxy listen address")
 	confFile  = flag.String("config", "./configure/config.yaml", "Configure file path . ")
 	pluginDir = flag.String("plugins", "./plugins", "Plugins Folder path.")
@@ -41,14 +43,22 @@ func writeToFile(p string, value string) {
 func main() {
 	writeToFile("./reload.sh", fmt.Sprintf("kill -SIGUSR1 %d", os.Getpid()))
 	flag.Parse()
+	if *debug {
+		fhook := filename.NewHook()
+		log.AddHook(fhook)
+		log.SetLevel(log.DebugLevel)
+
+	}
 	certs.UpdateCA()
+
 	header.PluginLoad(*pluginDir)
 	proxy = goproxy.NewProxyHttpServer()
 	proxy.Verbose = *verbose
+
 	proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
 	header.YamlHeader(proxy, *confFile)
 	header.PluginOnProxy(proxy)
-	log.Info("load compiled!")
+	log.Debug("load compiled!")
 
 	go func() {
 		err := http.ListenAndServe(*addr, proxy)

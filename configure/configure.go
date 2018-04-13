@@ -3,6 +3,7 @@ package configure
 import (
 	"io/ioutil"
 
+	"github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -21,13 +22,14 @@ const (
 )
 
 type Configure struct {
-	Requests  []*Request  `yaml:"requests"`
-	Responses []*Response `yaml:"responses"`
+	Requests  []*Request  `yaml:"requests,omitempty"`
+	Responses []*Response `yaml:"responses,omitempty"`
 }
 
 func NewConfigureByYaml(f string) (*Configure, error) {
 	b, err := ioutil.ReadFile(f)
 	if err != nil {
+		logrus.Error(err)
 		return nil, err
 	}
 	conf := new(Configure)

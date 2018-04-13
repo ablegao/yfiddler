@@ -18,16 +18,14 @@ type ProxyPlugin interface {
 	OnStart()
 	OnStop()
 	Reset()
-	InHost(string) bool
-	Filter(string) bool
+	Filter(*http.Request) bool
 }
 
 type ProxyPluginRequest interface {
 	OnStart()
 	OnStop()
 	Reset()
-	InHost(string) bool
-	Filter(string) bool
+	Filter(*http.Request) bool
 	Request(req *http.Request) (*http.Request, *http.Response)
 }
 
@@ -35,8 +33,7 @@ type ProxyPluginResponse interface {
 	OnStart()
 	OnStop()
 	Reset()
-	InHost(string) bool
-	Filter(string) bool
+	Filter(*http.Request) bool
 	Response(resp *http.Response) *http.Response
 }
 
@@ -50,7 +47,7 @@ func PluginLoad(pdir string) {
 
 		fileInfo := strings.Split(file.Name(), ".")
 		if !file.IsDir() && len(fileInfo) == 2 && fileInfo[1] == "so" {
-			log.Info("Plugin file:", file.Name())
+			log.Debug("Plugin file:", file.Name())
 			p, err := plugin.Open(fmt.Sprintf("%s/%s", pdir, file.Name()))
 			if err != nil {
 				log.Error(err)
@@ -66,20 +63,19 @@ func PluginLoad(pdir string) {
 			pluginsMap[fileInfo[0]].OnStart()
 		}
 	}
-
-	log.Info(pluginsMap)
-
 }
 
 func PluginOnProxy(proxy *goproxy.ProxyHttpServer) {
 	proxy.OnRequest().DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
+
 		for n, _ := range pluginsMap {
 			if pp, ok := pluginsMap[n].(ProxyPluginRequest); ok &&
-				pp.InHost(req.Host) &&
-				pp.Filter(req.URL.Path) {
-				log.Info("RUN START Request: ", n)
+				pp.Filter(req) {
+				log.Debug("RUN START Request: ", n)
 				res, resp := pp.Request(req)
 				return res, resp
+			} else if !ok {
+				log.Error(n, " plugin definition does not match the request interface")
 			}
 		}
 		return req, nil
@@ -89,9 +85,8 @@ func PluginOnProxy(proxy *goproxy.ProxyHttpServer) {
 		for n, plug := range pluginsMap {
 			if pp, ok := plug.(ProxyPluginResponse); ok &&
 				resp != nil &&
-				plug.InHost(resp.Request.Host) &&
-				plug.Filter(resp.Request.RequestURI) {
-				log.Info("RUN START Response", n)
+				pp.Filter(resp.Request) {
+				log.Debug("RUN START Response ", n)
 				resp = pp.Response(resp)
 				return resp
 			}
@@ -104,7 +99,7 @@ func PluginOnProxy(proxy *goproxy.ProxyHttpServer) {
 func PluginOnStop() {
 	for n, _ := range pluginsMap {
 		//pluginsMap[n].OnStart()
-		log.Info("STOP ", n)
+		log.Debug("STOP ", n)
 		pluginsMap[n].OnStop()
 	}
 }
@@ -112,7 +107,7 @@ func PluginOnStop() {
 func PluginsOnReset() {
 	for n, _ := range pluginsMap {
 		//pluginsMap[n].OnStart()
-		log.Info("RESET ", n)
+		log.Debug("RESET ", n)
 		pluginsMap[n].Reset()
 	}
 }
