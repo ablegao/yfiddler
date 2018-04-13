@@ -2,6 +2,7 @@ package configure
 
 import (
 	"strings"
+	"yfiddler/hooks"
 )
 
 type Request struct {
@@ -12,6 +13,7 @@ type Request struct {
 	Headers    map[string][]string `yaml:"headers,omitempty"`
 	DataType   int                 `yaml:"datatype"`
 	Data       string              `yaml:"data,omitempty"`
+	DataHooks  []hooks.Hook        `yaml:"data_hooks,omitempty"`
 	Response   *Response           `yaml:"response,omitempty"`
 }
 
@@ -19,15 +21,8 @@ func (self *Request) InHosts(host string) bool {
 	if len(self.Hosts) == 0 { // 未指定 hosts  == true
 		return true
 	}
-	n := 0
 	for _, k := range self.Hosts {
 		if k == host {
-			n = n + 1
-		}
-	}
-	switch self.HostType {
-	case HOST_TYPE_OR: // 或类型 n >0 return true
-		if n > 0 {
 			return true
 		}
 	}

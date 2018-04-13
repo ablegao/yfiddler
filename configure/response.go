@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"yfiddler/hooks"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func NewResponse(r *http.Request) (res *http.Response) {
@@ -36,24 +39,42 @@ type Response struct {
 	Headers    map[string][]string `yaml:"headers,omitempty"`
 	DataType   int                 `yaml:"datatype,omitempty"`
 	Data       string              `yaml:"data,omitempty"`
+	DataHooks  []hooks.Hook        `yaml:"data_hooks,omitempty"`
 }
 
 func (self *Response) GenReadCloser() (int64, io.ReadCloser, error) {
 	switch self.DataType {
 	case DATA_TYPE_TEXT:
-		buf := bytes.NewBufferString(self.Data)
+		body := self.Data
+		for _, h := range self.DataHooks {
+			body = h.Gen(body)
+			log.Debug("HOOK RUN Plugin: ", h.Name, " ", self.Data, "[", body, "]")
+		}
+		buf := bytes.NewBufferString(body)
 		return int64(buf.Len()), ioutil.NopCloser(buf), nil
 	case DATA_TYPE_FILE:
 		f, err := os.Open(self.Data)
 		if err != nil {
 			return 0, nil, err
 		}
-		fi, err := f.Stat()
-		if err != nil {
-			return 0, nil, err
-		}
-		return fi.Size(), io.ReadCloser(f), nil
+		if len(self.DataHooks) == 0 {
+			fi, err := f.Stat()
+			if err != nil {
+				return 0, nil, err
+			}
+			return fi.Size(), io.ReadCloser(f), nil
+		} else {
+			body := bytes.NewBuffer(nil)
+			io.Copy(body, f)
+			for _, h := range self.DataHooks {
+				tmp := body.String()
+				tmp = h.Gen(tmp)
+				body.Reset()
+				body.WriteString(tmp)
+			}
 
+			return int64(body.Len()), ioutil.NopCloser(body), nil
+		}
 	}
 
 	return 0, nil, errors.New("Gen ERROR NULL")

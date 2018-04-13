@@ -17,6 +17,17 @@ requests:
 
   -
     hosts:
+      - nbt.com
+    filter:
+      - test.html
+    response:
+      data: aaaaaaaa.com?aaa=bbb=ccc=eee
+      data_hooks:
+        -
+          name: base64encode
+          
+  -
+    hosts:
       - r1.snnd.co
     filter_type: 0
     filters:

@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"yfiddler/certs"
 	"yfiddler/header"
+	"yfiddler/hooks"
 
 	"github.com/elazarl/goproxy"
 	"github.com/onrik/logrus/filename"
@@ -22,12 +23,13 @@ import (
 )
 
 var (
-	proxy     *goproxy.ProxyHttpServer
-	verbose   = flag.Bool("v", false, "should every proxy request be logged to stdout")
-	debug     = flag.Bool("debug", false, "should debug mesage to logged to stdout")
-	addr      = flag.String("addr", ":8080", "proxy listen address")
-	confFile  = flag.String("config", "./configure/config.yaml", "Configure file path . ")
-	pluginDir = flag.String("plugins", "./plugins", "Plugins Folder path.")
+	proxy         *goproxy.ProxyHttpServer
+	verbose       = flag.Bool("v", false, "should every proxy request be logged to stdout")
+	debug         = flag.Bool("debug", false, "should debug mesage to logged to stdout")
+	addr          = flag.String("addr", ":8080", "proxy listen address")
+	confFile      = flag.String("config", "./configure/config.yaml", "Configure file path . ")
+	pluginDir     = flag.String("plugins", "./plugins", "Plugins Folder path.")
+	hookPluginDir = flag.String("plugin_hooks", "./hooks/plugins", "YAML hook plugins.")
 )
 
 func writeToFile(p string, value string) {
@@ -50,6 +52,7 @@ func main() {
 
 	}
 	certs.UpdateCA()
+	hooks.Autoload(*hookPluginDir)
 
 	header.PluginLoad(*pluginDir)
 	proxy = goproxy.NewProxyHttpServer()
