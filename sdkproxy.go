@@ -49,6 +49,7 @@ func main() {
 		fhook := filename.NewHook()
 		log.AddHook(fhook)
 		log.SetLevel(log.DebugLevel)
+		log.Debug("Cofigure ", *confFile)
 
 	}
 	certs.UpdateCA()

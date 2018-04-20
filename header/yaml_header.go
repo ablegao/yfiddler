@@ -35,7 +35,8 @@ func YamlHeader(proxy *goproxy.ProxyHttpServer, yamlFile string) {
 					res := &http.Response{}
 					res.Request = req
 					res.TransferEncoding = req.TransferEncoding
-					res.Header = http.Header(request.Headers)
+					res.Header = http.Header(request.Response.Headers)
+
 					size, b, err := request.Response.GenReadCloser()
 					if err != nil {
 						log.Error(err)

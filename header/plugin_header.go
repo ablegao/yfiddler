@@ -50,13 +50,13 @@ func PluginLoad(pdir string) {
 			log.Debug("Plugin file:", file.Name())
 			p, err := plugin.Open(fmt.Sprintf("%s/%s", pdir, file.Name()))
 			if err != nil {
-				log.Error(err)
+				log.Error(file.Name(), " ", err)
 				continue
 			}
 			//	pluginsMap[fileInfo[0]] =
 			plug, err := p.Lookup(strings.Title(fileInfo[0]))
 			if err != nil {
-				log.Error(err)
+				log.Error(file.Name(), err)
 				continue
 			}
 			pluginsMap[fileInfo[0]] = plug.(ProxyPlugin)
@@ -71,7 +71,7 @@ func PluginOnProxy(proxy *goproxy.ProxyHttpServer) {
 		for n, _ := range pluginsMap {
 			if pp, ok := pluginsMap[n].(ProxyPluginRequest); ok &&
 				pp.Filter(req) {
-				log.Debug("RUN START Request: ", n)
+				log.Debug("Plugin RUN START Request: ", n)
 				res, resp := pp.Request(req)
 				return res, resp
 			} else if !ok {

@@ -10,10 +10,10 @@ requests:
       data: "./rootCA.pem"
       headers:
         Content-Disposition:
-          - attachment
-            filename='rootCA.pem'
+            - attachment
+            - filename='rootCA.pem'
         Content-type:
-          - "PEM certificate"
+            - "PEM certificate"
 
   -
     hosts:
