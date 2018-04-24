@@ -57,6 +57,7 @@ func (self *Response) GenReadCloser() (int64, io.ReadCloser, error) {
 		if err != nil {
 			return 0, nil, err
 		}
+		defer f.Close()
 		if len(self.DataHooks) == 0 {
 			fi, err := f.Stat()
 			if err != nil {

@@ -27,7 +27,7 @@ func YamlHeader(proxy *goproxy.ProxyHttpServer, yamlFile string) {
 		for id, request := range config.Requests {
 
 			if config.Requests[id].InHosts(req.Host) && request.Filter(req.RequestURI) {
-				log.Debug("RUN YAML Request:", request, " true")
+				log.Debug("RUN YAML Request:", request, " true ", request.Response)
 				for hk, hv := range request.Headers {
 					req.Header.Set(hk, strings.Join(hv, "; "))
 				}
@@ -36,6 +36,7 @@ func YamlHeader(proxy *goproxy.ProxyHttpServer, yamlFile string) {
 					res.Request = req
 					res.TransferEncoding = req.TransferEncoding
 					res.Header = http.Header(request.Response.Headers)
+					res.StatusCode = http.StatusOK
 
 					size, b, err := request.Response.GenReadCloser()
 					if err != nil {
@@ -44,6 +45,7 @@ func YamlHeader(proxy *goproxy.ProxyHttpServer, yamlFile string) {
 					}
 					res.Body = b
 					res.ContentLength = size
+
 					return req, res
 				}
 				log.Error("Reqeuset filter error:", req.URL.String())
